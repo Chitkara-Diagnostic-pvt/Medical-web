@@ -9,28 +9,14 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { authClient } from "@/lib/auth-cilent"
+import { FormData, formSchema } from "@/lib/validation/auth_zod";
 
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters long"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters long"),
-  confirmPassword: z.string().min(8, "Password must be at least 8 characters long"),
-  PhoneNumber: z.string()
-    .regex(/^(\+91)?[6-9]\d{9}$/, "Enter valid Indian phone (+919876543210)")
-    .optional()
-    .or(z.literal('')),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-})
 
-type FormData = z.output<typeof formSchema>;
 
 export function SignupForm({
   className,
@@ -43,7 +29,6 @@ export function SignupForm({
     defaultValues: {
       name: "",
       email: "",
-      PhoneNumber: "",
       password: "",
       confirmPassword: "",
     }
@@ -83,7 +68,7 @@ export function SignupForm({
           Fill in the form below to create your account
         </p>
       </div>
-      <FieldGroup className="space-y-3">
+      <FieldGroup className="space-y-1">
         <div className="space-y-2">
           <FieldLabel htmlFor="name">Full Name</FieldLabel>
           <Input 
@@ -93,7 +78,7 @@ export function SignupForm({
             {...form.register("name")}
           />
           {form.formState.errors.name && (
-            <FieldDescription className="text-red-500 !mt-1">
+            <FieldDescription className="text-red-500 mt-1!">
               {form.formState.errors.name.message}
             </FieldDescription>
           )}
@@ -108,27 +93,12 @@ export function SignupForm({
             {...form.register("email")}
           />
           {form.formState.errors.email ? (
-            <FieldDescription className="text-red-500 !mt-1">
+            <FieldDescription className="text-red-500 mt-1!">
               {form.formState.errors.email.message}
             </FieldDescription>
           ) : (
-            <FieldDescription className="!mt-1">
+            <FieldDescription className="mt-1!">
               We&apos;ll use this to contact you. We will not share your email with anyone else.
-            </FieldDescription>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <FieldLabel htmlFor="phone">Phone (Optional)</FieldLabel>
-          <Input 
-            id="phone" 
-            type="tel" 
-            placeholder="+91 9999988888" 
-            {...form.register("PhoneNumber")}
-          />
-          {form.formState.errors.PhoneNumber && (
-            <FieldDescription className="text-red-500 !mt-1">
-              {form.formState.errors.PhoneNumber.message}
             </FieldDescription>
           )}
         </div>
@@ -154,17 +124,17 @@ export function SignupForm({
           </div>
           
           {form.formState.errors.password && (
-            <FieldDescription className="text-red-500 !mt-1">
+            <FieldDescription className="text-red-500 mt-1!">
               {form.formState.errors.password.message}
             </FieldDescription>
           )}
           {form.formState.errors.confirmPassword && (
-            <FieldDescription className="text-red-500 !mt-1">
+            <FieldDescription className="text-red-500 mt-1!">
               {form.formState.errors.confirmPassword.message}
             </FieldDescription>
           )}
           {!form.formState.errors.password && !form.formState.errors.confirmPassword && (
-            <FieldDescription className="!mt-1">
+            <FieldDescription className="mt-1!">
               Must be at least 8 characters long.
             </FieldDescription>
           )}
@@ -187,7 +157,7 @@ export function SignupForm({
         </Button>
 
         <FieldDescription className="text-center">
-          Already have an account? <a href="/auth/signin" className="underline font-medium">Sign in</a>
+          Already have an account? <a href="/signin" className="underline font-medium">Sign in</a>
         </FieldDescription>
       </FieldGroup>
     </form>
