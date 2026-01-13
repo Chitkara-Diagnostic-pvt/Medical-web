@@ -1,20 +1,23 @@
 'use server'
 
-import { authClient } from "@/lib/auth-cilent";
+import { auth } from "@/lib/auth";
 import { LoginSchema } from "@/lib/validation/auth_zod";
-import { redirect } from "next/navigation";
-import { error } from "console";
+import { SignInState } from "@/types/auth";
 
-export async function SignInAction(formData: FormData){
-    console.log(formData);
-    const email = formData.get('email')
-    const password = formData.get('password')
+export async function signInAction(
+    prevState: SignInState,
+    formData: FormData
+): Promise<SignInState> {
+    console.log("signInAction called");
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
     console.log(email, password);
 
     const validated = LoginSchema.safeParse({
         email,
         password
     })
+    console.log("Validation result:", validated);
     if(!validated.success){
         console.log(validated.error);
         return {
@@ -22,34 +25,27 @@ export async function SignInAction(formData: FormData){
         }
     }
     try{
-        const {data, error} = await authClient.signIn.email({
-            email: validated.data.email,
-            password: validated.data.password
-        })
-        if(error){
-            return {
-                error: "Invalid email or password",
+        // Use auth.api directly instead of authClient
+        const response = await auth.api.signInEmail({
+            body: {
+                email: validated.data.email,
+                password: validated.data.password
             }
-        }
-        if(!data || !data.user){
-            return {
-                error: 'No user data returned',
-            }
-        }
-        //after role added then do this 
-
-        // const roleredirects = {
-        //     user: "/me/dashboard",
-        //     lab_staff: "/lab/dashboard",
-        //     admin: "/admin/dashboard",
-        // }
-        // const redirectUrl = roleredirects[data.user.];
+        });
         
-        return redirect("/me/dashboard");
+        console.log("Auth response:", response);
+        
+        if(!response || !response.user){
+            return {
+                error: 'Invalid email or password',
+            }
+        }
+        
+        return {success: true};
     }catch(error){
         console.log("SignInAction error:", error);
         return {
-            error: 'An unexpected error occurred',
+            error: 'Invalid email or password',
         }
     }
 }

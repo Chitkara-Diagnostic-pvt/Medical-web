@@ -1,6 +1,6 @@
+"use client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {z} from "zod"
 import {
   Field,
   FieldDescription,
@@ -9,13 +9,32 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { useRouter } from "next/navigation"
+import { useActionState, useEffect } from "react"
+import { signInAction } from "@/app/actions/auth-serv"
+import { toast } from "sonner"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+
+  const router = useRouter();
+  const [state, formAction, isPending] = useActionState(signInAction, null);
+  
+  useEffect(() => {
+    if(state?.error){
+      toast.error(state.error);
+    }
+    if(state?.success){
+      toast.success(state.success);
+      router.push("/me/dashboard");
+    }
+  }, [state, router]);
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form 
+      action={formAction}
+      className={cn("flex flex-col gap-6", className)} {...props}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Login to your account</h1>
@@ -25,7 +44,14 @@ export function LoginForm({
         </div>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="m@example.com" required />
+          <Input 
+            name="email"
+            id="email" 
+            type="email" 
+            placeholder="m@example.com" 
+            required 
+            disabled={isPending}
+            />
         </Field>
         <Field>
           <div className="flex items-center">
@@ -37,10 +63,21 @@ export function LoginForm({
               Forgot your password?
             </a>
           </div>
-          <Input id="password" type="password" required />
+          <Input 
+            id="password" 
+            name="password" 
+            type="password" 
+            required 
+            disabled={isPending}
+            />
         </Field>
         <Field>
-          <Button type="submit">Login</Button>
+          <Button 
+            type="submit"
+            disabled={isPending}  
+          >
+            {isPending ? "Signing in..." : "Login"}
+          </Button>
         </Field>
         <FieldSeparator>Or continue with</FieldSeparator>
         <Field>
