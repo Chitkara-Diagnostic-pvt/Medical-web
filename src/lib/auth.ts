@@ -9,6 +9,16 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        defaultValue: "USER",
+        required: true,
+        input: false
+      }
+    }
+  },
   trustedOrigins: [
     "http://localhost:3000",
     "http://127.0.0.1:3000"
@@ -18,3 +28,4 @@ export const auth = betterAuth({
     disableCSRFCheck: process.env.NODE_ENV === "development",
   },
 });
+export type Session = typeof auth.$Infer.Session;

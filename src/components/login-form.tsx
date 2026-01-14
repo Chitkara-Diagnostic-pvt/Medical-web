@@ -9,31 +9,46 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
-import { useActionState, useEffect } from "react"
-import { signInAction } from "@/app/actions/auth-serv"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { LoginFormData, LoginSchema } from "@/lib/validation/auth_zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { authClient } from "@/lib/auth-cilent"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
-
-  const router = useRouter();
-  const [state, formAction, isPending] = useActionState(signInAction, null);
+  const router = useRouter()
+  const {
+    register,
+    handleSubmit,
+    formState: {errors, isSubmitting}
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(LoginSchema)
+  })
   
-  useEffect(() => {
-    if(state?.error){
-      toast.error(state.error);
+  async function onSubmit(data: LoginFormData){
+    try{
+      const result = await authClient.signIn.email({
+        email: data.email,
+        password: data.password,
+      })
+      if(result.error){
+        toast.error("Invalid Authentication")
+        return
+      }
+      toast.success("Logged in successfully")
+      router.push("/me/dashboard")
+    }catch(error){
+      toast.error("Something went wrong. Please try again.")
     }
-    if(state?.success){
-      toast.success(state.success);
-      router.push("/me/dashboard");
-    }
-  }, [state, router]);
+  }
+  
   return (
     <form 
-      action={formAction}
+      onSubmit={handleSubmit(onSubmit)}
       className={cn("flex flex-col gap-6", className)} {...props}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
@@ -45,13 +60,15 @@ export function LoginForm({
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input 
-            name="email"
+            {...register("email")}
             id="email" 
             type="email" 
             placeholder="m@example.com" 
-            required 
-            disabled={isPending}
-            />
+            disabled={isSubmitting}
+          />
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email.message}</p>
+          )}
         </Field>
         <Field>
           <div className="flex items-center">
@@ -64,19 +81,21 @@ export function LoginForm({
             </a>
           </div>
           <Input 
+            {...register("password")}
             id="password" 
-            name="password" 
             type="password" 
-            required 
-            disabled={isPending}
-            />
+            disabled={isSubmitting}
+          />
+          {errors.password && (
+            <p className="text-sm text-red-500">{errors.password.message}</p>
+          )}
         </Field>
         <Field>
           <Button 
             type="submit"
-            disabled={isPending}  
+            disabled={isSubmitting}  
           >
-            {isPending ? "Signing in..." : "Login"}
+            {isSubmitting ? "Signing in..." : "Login"}
           </Button>
         </Field>
         <FieldSeparator>Or continue with</FieldSeparator>
