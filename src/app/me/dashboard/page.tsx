@@ -13,10 +13,17 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { ROLES } from "@/lib/auth"
+import { requireRole } from "@/lib/server-auth"
+import { redirect } from "next/navigation"
 
-export default function Page() {
-  return (
-    <SidebarProvider>
+export default async function Page() {
+  const session = await requireRole(ROLES.USER)
+    if(!session){
+      return redirect('/unauthorized')
+    }
+    return (
+      <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -30,7 +37,8 @@ export default function Page() {
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
                   <BreadcrumbLink href="#">
-                    Building Your Application
+                    Home
+                    <span>{session.user.name}</span>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
@@ -53,3 +61,4 @@ export default function Page() {
     </SidebarProvider>
   )
 }
+

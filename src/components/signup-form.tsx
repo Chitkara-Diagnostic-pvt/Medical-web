@@ -15,6 +15,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { authClient } from "@/lib/auth-cilent"
 import { FormData, formSchema } from "@/lib/validation/auth_zod";
+import { useRouter, useSearchParams } from "next/navigation"
+
+  
 
 
 
@@ -34,6 +37,11 @@ export function SignupForm({
     }
   })
 
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const callbackUrl = searchParams.get("callbackUrl") || "/me/dashboard"
+
   async function onSubmit(data: FormData) {
     setIsLoading(true);
     try {
@@ -41,18 +49,19 @@ export function SignupForm({
         name: data.name,
         email: data.email,
         password: data.password,
-        callbackURL: "/dashboard",
+        callbackURL: callbackUrl,
       });
-      if (!result) {
+      if (!result || result.error) {
         toast.error("Failed to create account. Please try again.");
         return;
       }
       toast.success("Account created successfully!");
+      form.reset();
+      router.push(callbackUrl);
     } catch (err) {
       toast.error("Failed to create account. Please try again.");
     } finally {
       setIsLoading(false);
-      form.reset();
     }
   }
 

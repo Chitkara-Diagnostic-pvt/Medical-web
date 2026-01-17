@@ -28,4 +28,12 @@ export const auth = betterAuth({
     disableCSRFCheck: process.env.NODE_ENV === "development",
   },
 });
+
+export const ROLES = {
+  USER: "user" as const,
+  LAB_STAFF: "lab_staff" as const,
+  ADMIN: "admin" as const,
+}as const;
+
+export type Role = typeof ROLES[keyof typeof ROLES];
 export type Session = typeof auth.$Infer.Session;
