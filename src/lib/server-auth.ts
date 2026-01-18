@@ -21,48 +21,65 @@ export async function requireAuth(){
     return session
 }
 
-// Support single role or array of roles
-export async function requireRole(allowedRoles: Role | Role[]){
+export async function requireAuth() {
+    const session = await getServerSession()
+    
+    if (!session?.user) {
+        redirect('/signin?callbackUrl=/me/dashboard')
+    }
+    return session
+}
+
+export async function requireRole(allowedRoles: Role | Role[]) {
     const session = await requireAuth()
     
-    // Normalize to array
     const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]
     
-    // Verify role from database (not just session) for security
+    // OPTIMIZATION: Check session role first (no DB call)
+    const sessionRole = session.user.role as Role | undefined
+    if (sessionRole && roles.includes(sessionRole)) {
+        return session 
+    }
+    
+    // FALLBACK: Verify from DB only if session role missing/invalid
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: { role: true }
     })
 
-    if (!user) {
-        redirect('/signin')
-    }
-
-    // Check if user's role is in allowed roles
-    if (!roles.includes(user.role as Role)) {
+    if (!user || !roles.includes(user.role as Role)) {
         redirect('/unauthorized')
     }
     
     return { ...session, user: { ...session.user, role: user.role } }
 }
 
-// Helper to check if user has any of the specified roles (without redirect)
-export async function hasRole(allowedRoles: Role | Role[]): Promise<boolean> {
-    const session = await getServerSession()
-    
-    if (!session?.user) {
-        return false
-    }
-    
-    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]
-    
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { role: true }
-    })
 
-    return user ? roles.includes(user.role as Role) : false
-}
-
-// Export role constants for convenience
 export { ROLES }
+
+// only need if you need conditional UI rendering.
+
+
+// export async function hasRole(allowedRoles: Role | Role[]): Promise<boolean> {
+//     const session = await getServerSession()
+    
+//     if (!session?.user) {
+//         return false
+//     }
+    
+//     const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]
+    
+//     // OPTIMIZATION: Check session role first
+//     const sessionRole = session.user.role as Role | undefined
+//     if (sessionRole && roles.includes(sessionRole)) {
+//         return true // Fast path
+//     }
+    
+//     // FALLBACK: DB lookup
+//     const user = await prisma.user.findUnique({
+//         where: { id: session.user.id },
+//         select: { role: true }
+//     })
+
+//     return user ? roles.includes(user.role as Role) : false
+// }
