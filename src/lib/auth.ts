@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import  prisma  from "@/lib/prisma";
+import { nextCookies } from "better-auth/next-js"
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -9,6 +10,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  plugins: [nextCookies()],
   user: {
     additionalFields: {
       role: {
@@ -30,9 +32,9 @@ export const auth = betterAuth({
 });
 
 export const ROLES = {
-  USER: "user" as const,
-  LAB_STAFF: "lab_staff" as const,
-  ADMIN: "admin" as const,
+  USER: "USER" as const,
+  LAB_STAFF: "LAB_STAFF" as const,
+  ADMIN: "ADMIN" as const,
 }as const;
 
 export type Role = typeof ROLES[keyof typeof ROLES];

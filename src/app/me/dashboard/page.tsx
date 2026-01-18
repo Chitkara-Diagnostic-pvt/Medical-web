@@ -13,17 +13,13 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { ROLES } from "@/lib/auth"
-import { requireRole } from "@/lib/server-auth"
-import { redirect } from "next/navigation"
+import { requireRole, ROLES } from "@/lib/server-auth"
 
 export default async function Page() {
-  const session = await requireRole(ROLES.USER)
-    if(!session){
-      return redirect('/unauthorized')
-    }
-    return (
-      <SidebarProvider>
+  const session = await requireRole([ROLES.USER, ROLES.LAB_STAFF, ROLES.ADMIN])
+  
+  return (
+    <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -55,7 +51,7 @@ export default async function Page() {
             <div className="bg-muted/50 aspect-video rounded-xl" />
             <div className="bg-muted/50 aspect-video rounded-xl" />
           </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+          <div className="bg-muted/50 min-h-screen flex-1 rounded-xl md:min-h-min" />
         </div>
       </SidebarInset>
     </SidebarProvider>

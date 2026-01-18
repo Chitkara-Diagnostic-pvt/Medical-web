@@ -7,7 +7,6 @@ import {
   Settings,
   Upload,
   ClipboardList,
-  DollarSign,
   UserCog,
   LucideIcon
 } from "lucide-react"

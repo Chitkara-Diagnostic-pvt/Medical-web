@@ -17,7 +17,7 @@ export default function Unauthorized() {
           <a href="/signup" className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-center font-medium hover:bg-blue-700">
             Signup
           </a>
-          <a href="/login" className="flex-1 border border-gray-300 py-2 px-4 rounded-lg text-center font-medium hover:bg-gray-50">
+          <a href="/signin" className="flex-1 border border-gray-300 py-2 px-4 rounded-lg text-center font-medium hover:bg-gray-50">
             Login
           </a>
         </div>
