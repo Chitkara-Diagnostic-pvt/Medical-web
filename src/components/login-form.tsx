@@ -9,28 +9,25 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
-import { useActionState, useEffect } from "react"
-import { signInAction } from "@/app/actions/auth-serv"
 import { toast } from "sonner"
+import { useActionState, useEffect } from "react"
+import { signInAction, ActionResult } from "@/app/actions/auth"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(
+    signInAction,
+    null
+  )
 
-  const router = useRouter();
-  const [state, formAction, isPending] = useActionState(signInAction, null);
-  
   useEffect(() => {
-    if(state?.error){
-      toast.error(state.error);
+    if (state?.success === false) {
+      toast.error(state.error)
     }
-    if(state?.success){
-      toast.success(state.success);
-      router.push("/me/dashboard");
-    }
-  }, [state, router]);
+  }, [state])
+  
   return (
     <form 
       action={formAction}
@@ -49,9 +46,9 @@ export function LoginForm({
             id="email" 
             type="email" 
             placeholder="m@example.com" 
-            required 
             disabled={isPending}
-            />
+            required
+          />
         </Field>
         <Field>
           <div className="flex items-center">
@@ -64,12 +61,12 @@ export function LoginForm({
             </a>
           </div>
           <Input 
+            name="password"
             id="password" 
-            name="password" 
             type="password" 
-            required 
             disabled={isPending}
-            />
+            required
+          />
         </Field>
         <Field>
           <Button 
