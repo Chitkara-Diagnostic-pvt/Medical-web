@@ -4,12 +4,17 @@ import { redirect } from 'next/navigation'
 import prisma from '@/lib/prisma'
 
 export async function getServerSession(){
-    const headersList = await headers()
+    try{
+        const headersList = await headers()
+        const session = await auth.api.getSession({
+            headers: headersList
+        })
+        return session
+    }catch(error){
+        console.log(error);
+        return null
+    }
     
-    const session = await auth.api.getSession({
-        headers: headersList
-    })
-    return session
 }
 
 export async function requireAuth(){
@@ -21,27 +26,19 @@ export async function requireAuth(){
     return session
 }
 
-export async function requireAuth() {
-    const session = await getServerSession()
-    
-    if (!session?.user) {
-        redirect('/signin?callbackUrl=/me/dashboard')
-    }
-    return session
-}
 
 export async function requireRole(allowedRoles: Role | Role[]) {
     const session = await requireAuth()
     
     const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]
     
-    // OPTIMIZATION: Check session role first (no DB call)
-    const sessionRole = session.user.role as Role | undefined
-    if (sessionRole && roles.includes(sessionRole)) {
-        return session 
-    }
+    //Check session role first (no DB call)
+    // const sessionRole = session.user.role as Role | undefined
+    // if (sessionRole && roles.includes(sessionRole)) {
+    //     return session 
+    // }
     
-    // FALLBACK: Verify from DB only if session role missing/invalid
+    // Verify from DB only if session role missing/invalid
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: { role: true }

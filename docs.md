@@ -15,7 +15,7 @@ PAYEMNT
 Owner: SYSTEM
 Initiated by: USER
 Confirmed by: SYSTEM (webhook)
-Admin can: (I DIDN'T THINK OF THESE thing now so , not sure) for refund (i think direct call would be good option)
+Admin can: (I DIDN'T THINK OF THESE thing now so , not sure) for refund (i think direct call )would be good option)
 Users/Admins can NEVER set PAID
 
 TimeSlot
