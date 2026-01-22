@@ -2,6 +2,7 @@
 import { requireAuth } from '@/lib/server-auth'
 import z from 'zod'
 import prisma from '@/lib/prisma'
+import { redirect } from 'next/navigation'
 
 const createBookingSchema = z.object({
     testId: z.string().cuid(),
@@ -40,42 +41,74 @@ export async function createBooking(
                 where: {id: slotId},
                 select: {
                     testId: true,
+                    date: true,
                     startTime: true,
-                    capacity: true,
-                    maxCapacity: true,
+                    currentBooked: true,
+                    maxBooked: true,
+                    isActive: true
                 }
             })
             if (!slot || slot.testId !== testId) {  
                 throw new Error('Invalid slot for test')
             }
-
-            if(slot.capacity){
-
+            if (!slot.isActive) {
+                throw new Error('This time slot is no longer available')
             }
+            if(slot.currentBooked >= slot.maxBooked){
+                throw new Error("slot is fully booked. Choose another slot")
+            }
+            const slotDate = new Date(`${slot.date}T${slot.startTime}:00`)
+            if(slotDate < new Date()){
+                throw new Error("Cannot book the past time slot")
+            }
+
             const existingBooking = await tx.booking.findFirst({
                 where: {
                     userId: userId,
                     slotId: slotId,
+                    status: {in: ['PENDING','CONFIRMED']}
                 },
                 select: {id: true},
             })
             if(existingBooking){
-                throw new Error('Slot already booked')
+                throw new Error('You already have a booking for this time slot')
             }
             const newbooking = await tx.booking.create({
                 data: {
                     userId: userId,
                     testId: testId,
                     slotId: slotId,
-                    status: 'PENDING',
+                    amount: test.price,
+                    status: "PENDING",
                 },
                 select: {
                     id: true,
-                },
+                    bookingNumber: true,
+                }
             })
+            await tx.timeslot.update({
+                where:{
+                    id: slotId,
+                },
+                data:{
+                    currentBooked : {increment: 1}
+                }
+            })
+            return;
         })
+        
     }catch(error){
-        console.log(error);
+        if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+            throw error
+        }
+        
+        console.error('Booking creation error:', error)
+
+        return {
+            error: error instanceof Error 
+                ? error.message 
+                : 'Failed to create booking. Please try again.'
+        }
     }
 
 }
