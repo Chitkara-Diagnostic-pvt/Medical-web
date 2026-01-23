@@ -2,7 +2,6 @@
 import { requireAuth } from '@/lib/server-auth'
 import z from 'zod'
 import prisma from '@/lib/prisma'
-import { redirect } from 'next/navigation'
 
 const createBookingSchema = z.object({
     testId: z.string().cuid(),
@@ -27,7 +26,7 @@ export async function createBooking(
         return {error: 'Only users can create bookings'}
     }
     try{
-        const booking = await prisma.$transaction(async(tx)=>{
+        await prisma.$transaction(async(tx)=>{
             const test = await tx.test.findFirst({
                 where: {
                     id: testId,
@@ -73,7 +72,22 @@ export async function createBooking(
             if(existingBooking){
                 throw new Error('You already have a booking for this time slot')
             }
-            const newbooking = await tx.booking.create({
+            const updateResult = await tx.timeslot.updateMany({
+                where: {
+                    id: slotId,
+                    currentBooked: { lt: slot.maxBooked },
+                    isActive: true
+                },
+                data: {
+                    currentBooked: { increment: 1 }
+                }
+            })
+
+            if(updateResult.count === 0){
+                throw new Error("slot is fully booked. Choose another slot")
+            }
+
+            await tx.booking.create({
                 data: {
                     userId: userId,
                     testId: testId,
@@ -84,14 +98,6 @@ export async function createBooking(
                 select: {
                     id: true,
                     bookingNumber: true,
-                }
-            })
-            await tx.timeslot.update({
-                where:{
-                    id: slotId,
-                },
-                data:{
-                    currentBooked : {increment: 1}
                 }
             })
             return;
