@@ -124,7 +124,7 @@ model Timeslot {
   endTime       String                  
   
   currentBooked Int       @default(0)
-  maxBooked     Int       @default(30)
+  maxBooked     Int       @default(2)
   isActive      Boolean   @default(true)  
   
   bookings      Booking[]

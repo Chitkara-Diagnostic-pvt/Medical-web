@@ -72,22 +72,24 @@ export async function createBooking(
             if(existingBooking){
                 throw new Error('You already have a booking for this time slot')
             }
+
             const updateResult = await tx.timeslot.updateMany({
                 where: {
                     id: slotId,
-                    currentBooked: { lt: slot.maxBooked },
-                    isActive: true
+                    currentBooked: { lt: slot.maxBooked }, // Only update if not full
+                    isActive: true // Ensure slot is still active
                 },
                 data: {
                     currentBooked: { increment: 1 }
                 }
             })
 
+            //(race condition)
             if(updateResult.count === 0){
                 throw new Error("slot is fully booked. Choose another slot")
             }
 
-            await tx.booking.create({
+            const newbooking = await tx.booking.create({
                 data: {
                     userId: userId,
                     testId: testId,
@@ -100,8 +102,12 @@ export async function createBooking(
                     bookingNumber: true,
                 }
             })
-            return;
+            return newbooking;
+        },{
+            isolationLevel: 'Serializable',
+            timeout: 10000,
         })
+        return;
         
     }catch(error){
         if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
