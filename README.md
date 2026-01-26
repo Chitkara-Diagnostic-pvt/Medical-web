@@ -35,48 +35,118 @@ A modern medical lab testing booking platform built with Next.js 16, featuring u
 ## 📁 Project Structure
 
 ```
+
 medi-book/
-├── generated/
-│   └── prisma/           # Auto-generated Prisma client
-│       ├── client.ts
-│       ├── models.ts
-│       └── models/       # Individual model types
-├── prisma/
-│   ├── schema.prisma     # Database schema
-│   └── migrations/       # Migration history
-├── public/               # Static assets
-├── src/
-│   ├── app/
-│   │   ├── (auth)/       # Auth route group
-│   │   │   ├── signin/
-│   │   │   └── signup/
-│   │   ├── actions/      # Server actions
-│   │   │   └── auth-serv.ts
-│   │   ├── api/
-│   │   │   └── auth/
-│   │   │       └── [...all]/   # Better Auth API route
-│   │   |
-│   │   └── me/
-│   │       └── dashboard/     # User dashboard
-│   ├── components/
-│   │   ├── ui/           # Reusable UI components
-│   │   ├── login-form.tsx
-│   │   ├── signup-form.tsx
-│   │   └── logout-btn.tsx
-│   ├── hooks/
-│   │   └── use-mobile.ts
-│   ├── lib/
-│   │   ├── auth.ts           # Better Auth server config
-│   │   ├── auth-cilent.ts    # Better Auth client config
-│   │   ├── prisma.ts         # Prisma client instance
-│   │   ├── session.ts        # Session utilities
-│   │   └── validation/
-│   │       └── auth_zod.ts   # Zod validation schemas
-│   └── types/
-│       └── auth.ts
+├── components.json
+├── docs.md
+├── eslint.config.mjs
+├── LICENSE
+├── next-env.d.ts
+├── next.config.ts
 ├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── postcss.config.mjs
 ├── prisma.config.ts
-└── tsconfig.json
+├── README.md
+├── tsconfig.json
+├── generated/
+│   └── prisma/
+│       ├── browser.ts
+│       ├── client.ts
+│       ├── commonInputTypes.ts
+│       ├── enums.ts
+│       ├── models.ts
+│       ├── internal/
+│       │   ├── class.ts
+│       │   ├── prismaNamespace.ts
+│       │   └── prismaNamespaceBrowser.ts
+│       └── models/
+│           ├── Account.ts
+│           ├── Booking.ts
+│           ├── Report.ts
+│           ├── Session.ts
+│           ├── Test.ts
+│           ├── Timeslot.ts
+│           ├── User.ts
+│           └── Verification.ts
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
+│       ├── migration_lock.toml
+│       ├── 20260107220115_init/
+│       │   └── migration.sql
+│       ├── 20260108005338_1_01/
+│       │   └── migration.sql
+│       ├── 20260108005635_add_email_verified/
+│       │   └── migration.sql
+│       ├── 20260108005945_fixes/
+│       │   └── migration.sql
+│       ├── 20260108012942_fixes02/
+│       │   └── migration.sql
+│       ├── 20260109202622_add/
+│       │   └── migration.sql
+│       └── 20260120191917_add_timeslot/
+│           └── migration.sql
+├── public/
+└── src/
+  ├── app/
+  │   ├── globals.css
+  │   ├── layout.tsx
+  │   ├── page.tsx
+  │   ├── (auth)/
+  │   │   ├── signin/
+  │   │   │   └── page.tsx
+  │   │   └── signup/
+  │   │       └── page.tsx
+  │   ├── actions/
+  │   │   ├── auth.ts
+  │   │   └── booking.ts
+  │   ├── api/
+  │   │   └── auth/
+  │   │       └── [...all]/
+  │   │           └── route.ts
+  │   ├── me/
+  │   │   └── dashboard/
+  │   │       └── page.tsx
+  │   └── unauthorized/
+  │       └── page.tsx
+  ├── components/
+  │   ├── app-sidebar.tsx
+  │   ├── login-form.tsx
+  │   ├── logout-btn.tsx
+  │   ├── nav-main.tsx
+  │   ├── nav-projects.tsx
+  │   ├── nav-user.tsx
+  │   ├── signup-form.tsx
+  │   ├── team-switcher.tsx
+  │   └── ui/
+  │       ├── avatar.tsx
+  │       ├── breadcrumb.tsx
+  │       ├── button.tsx
+  │       ├── card.tsx
+  │       ├── collapsible.tsx
+  │       ├── dropdown-menu.tsx
+  │       ├── field.tsx
+  │       ├── input.tsx
+  │       ├── label.tsx
+  │       ├── separator.tsx
+  │       ├── sheet.tsx
+  │       ├── sidebar.tsx
+  │       ├── skeleton.tsx
+  │       ├── sonner.tsx
+  │       └── tooltip.tsx
+  ├── hooks/
+  │   └── use-mobile.ts
+  └── lib/
+    ├── auth-cilent.ts
+    ├── auth.ts
+    ├── navigation.ts
+    ├── prisma.ts
+    ├── server-auth.ts
+    ├── utils.ts
+    └── validation/
+      └── auth_zod.ts
 ```
 
 ---

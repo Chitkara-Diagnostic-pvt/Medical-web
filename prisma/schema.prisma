@@ -24,6 +24,8 @@ model User {
   sessions      Session[]
   accounts      Account[]
   bookings      Booking[]
+  payment       Payment[]
+  auditLogs     AuditLog[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -69,13 +71,16 @@ model Test{
   name  String
   description   String?
   price       Float
-  duration    String
+  duration    Int
   category    String
   isActive    Boolean   @default(true)
   bookings    Booking[]
+  slots       Timeslot[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  @@index([isActive, category])
+  @@map("test")
 }
 model Verification {
   id         String   @id @default(cuid())
@@ -90,26 +95,114 @@ model Verification {
 }
 model Booking {
   id             String   @id @default(cuid())
+  bookingNumber  String   @unique @default(cuid())
   userId         String
   user           User     @relation(fields: [userId], references: [id])
   testId         String
   test           Test     @relation(fields: [testId], references: [id])
-  collectionDate DateTime
-  collectionTime String
+  slotId         String
+  slot           Timeslot     @relation(fields: [slotId], references: [id])
   status         BookingStatus @default(PENDING)
-  report         Report?
+  report         Report[]
+  payment        Payment?
+  amount         Float
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([testId, status])
+  @@map("booking")
+}
+model Timeslot {
+  id            String    @id @default(cuid())
+  testId        String
+  test          Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  
+  date          DateTime  @db.Date      
+  startTime     String                  
+  endTime       String                  
+  
+  currentBooked Int       @default(0)
+  maxBooked     Int       @default(2)
+  isActive      Boolean   @default(true)  
+  
+  bookings      Booking[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@unique([testId, date, startTime])
+  @@index([date, isActive])
+  @@index([testId])
+  @@map("timeslot")
 }
 model Report {
   id         String   @id @default(cuid())
-  bookingId  String   @unique
+  bookingId  String   
   booking    Booking  @relation(fields: [bookingId], references: [id])
-  fileUrl    String?
-  remarks    String?
+  
+  fileUrl    String
+  fileName   String
+  fileSize   Int?
+  remarks    String?  @db.Text
+  
   uploadedBy String
+  
+  version    Int      @default(1)     
+  isActive   Boolean  @default(true)  
+  replacedBy String?                  
+  
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  
+  @@index([bookingId, isActive])
+  @@map("report")
+}
+model Payment {
+  id              String   @id @default(cuid())
+  bookingId       String   @unique
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  amount          Float
+  currency        String   @default("INR")
+  
+  // Payment provider details
+  provider        String   // "razorpay", "stripe"
+  providerTxnId   String?  @unique
+
+  // Status (ONLY system sets these)
+  isPaid          Boolean  @default(false)
+  paidAt          DateTime?
+  
+  // Webhook verification
+  webhookVerified Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([providerTxnId])
+  @@index([isPaid])
+}
+model AuditLog {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  
+  action   String   // Action performed
+  entity   String   // Entity type
+  entityId String   // Entity ID
+  
+  changes  Json?    // Before/after data
+  metadata Json?    // Additional context
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_log")
 }
 enum Role{
   USER
@@ -118,6 +211,7 @@ enum Role{
 }
 enum BookingStatus{
   PENDING
+  CONFIRMED
   SAMPLE_COLLECTED
   PROCESSING
   COMPLETED
