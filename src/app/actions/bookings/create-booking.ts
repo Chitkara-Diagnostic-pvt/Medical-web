@@ -1,126 +1,48 @@
 'use server'
+
 import { requireAuth } from '@/lib/server-auth'
-import z from 'zod'
-import prisma from '@/lib/prisma'
+import { redirect } from 'next/navigation'
+import { createBookingSchema } from '@/lib/validation/booking'
+import { BookingService } from '@/lib/services/booking.service'
 
-const createBookingSchema = z.object({
-    testId: z.string().cuid(),
-    slotId: z.string().cuid()
-})
-type BookingResult = { error: string } | void;
-export async function createBooking(
-    testId: string,
-    slotId: string
-):Promise<BookingResult>{
+type BookingResult = { error: string } | void
 
-    const validatedData = createBookingSchema.safeParse({testId, slotId})
-    if(!validatedData.success){
-        return {error: validatedData.error.message}
+export async function createBookingAction(
+  testId: string,
+  slotId: string
+): Promise<BookingResult> {
+  
+  const validatedData = createBookingSchema.safeParse({ testId, slotId })
+  if (!validatedData.success) {
+    return { error: 'Invalid test or slot ID' }
+  }
+  
+  const session = await requireAuth()
+  const userId = session.user.id
+  
+  if (session.user.role !== 'USER') {
+    return { error: 'Only patients can create bookings' }
+  }
+  
+  try {
+    const booking = await BookingService.createBooking({
+      userId,
+      testId,
+      slotId,
+    })
+ 
+    redirect(`/payment/${booking.id}`)
+    
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
+      throw error
     }
-    const session = await requireAuth();
-    const userId = session?.user.id;
-    if(!userId){
-        return {error: 'Not authenticated'}
+    
+    console.error('Booking creation error:', error)
+    return {
+      error: error instanceof Error 
+        ? error.message 
+        : 'Failed to create booking. Please try again.'
     }
-    if(session.user.role !== 'USER'){
-        return {error: 'Only users can create bookings'}
-    }
-    try{
-        await prisma.$transaction(async(tx)=>{
-            const test = await tx.test.findFirst({
-                where: {
-                    id: testId,
-                    isActive: true
-                },
-            })
-            if(!test){
-                throw new Error('Test not found or inactive')
-            }
-            const slot  = await tx.timeslot.findUnique({
-                where: {id: slotId},
-                select: {
-                    testId: true,
-                    date: true,
-                    startTime: true,
-                    currentBooked: true,
-                    maxBooked: true,
-                    isActive: true
-                }
-            })
-            if (!slot || slot.testId !== testId) {  
-                throw new Error('Invalid slot for test')
-            }
-            if (!slot.isActive) {
-                throw new Error('This time slot is no longer available')
-            }
-            if(slot.currentBooked >= slot.maxBooked){
-                throw new Error("slot is fully booked. Choose another slot")
-            }
-            const slotDate = new Date(`${slot.date}T${slot.startTime}:00`)
-            if(slotDate < new Date()){
-                throw new Error("Cannot book the past time slot")
-            }
-
-            const existingBooking = await tx.booking.findFirst({
-                where: {
-                    userId: userId,
-                    slotId: slotId,
-                    status: {in: ['PENDING','CONFIRMED']}
-                },
-                select: {id: true},
-            })
-            if(existingBooking){
-                throw new Error('You already have a booking for this time slot')
-            }
-
-            const updateResult = await tx.timeslot.updateMany({
-                where: {
-                    id: slotId,
-                    currentBooked: { lt: slot.maxBooked }, // Only update if not full
-                    isActive: true // Ensure slot is still active
-                },
-                data: {
-                    currentBooked: { increment: 1 }
-                }
-            })
-
-            //(race condition)
-            if(updateResult.count === 0){
-                throw new Error("slot is fully booked. Choose another slot")
-            }
-
-            const newbooking = await tx.booking.create({
-                data: {
-                    userId: userId,
-                    testId: testId,
-                    slotId: slotId,
-                    amount: test.price,
-                    status: "PENDING",
-                },
-                select: {
-                    id: true,
-                    bookingNumber: true,
-                }
-            })
-            return newbooking;
-        },{
-            isolationLevel: 'Serializable',
-            timeout: 10000,
-        })
-        return;
-        
-    }catch(error){
-        if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
-            throw error
-        }
-        
-        console.error('Booking creation error:', error)
-
-        return {
-            error: error instanceof Error 
-                ? error.message 
-                : 'Failed to create booking. Please try again.'
-        }
-    }
-
+  }
 }
